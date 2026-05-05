@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "OBSIDIAN GT | L'abonnement automobile ultime",
+  title: "ZENTURO | L'abonnement automobile ultime",
   description: "Conduisez des véhicules de prestige sur notre circuit intégré ou sur route. Abonnements mensuels et stages de conduite.",
 };
 
