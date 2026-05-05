@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { ChevronRight, ArrowRight, ChevronDown, Loader2, X } from "lucide-react";
+import { ChevronRight, ArrowRight, ChevronDown, Loader2, X, Calendar, User, CreditCard, CheckCircle, ArrowLeft } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 
 const CARS = [
@@ -90,6 +90,13 @@ export default function Home() {
   const [openCategory, setOpenCategory] = useState<string | null>("Sportive");
   const [loadingCheckout, setLoadingCheckout] = useState<string | null>(null);
   const [selectedCar, setSelectedCar] = useState<any | null>(null);
+  const [checkoutStep, setCheckoutStep] = useState<number>(0);
+  const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
+
+  const closeCarModal = () => {
+    setSelectedCar(null);
+    setTimeout(() => setCheckoutStep(0), 300);
+  };
 
   useEffect(() => {
     if (selectedCar) document.body.style.overflow = "hidden";
@@ -403,6 +410,228 @@ export default function Home() {
           </motion.button>
         </div>
       </motion.div>
+
+      {/* CAR DETAILS MODAL */}
+      <AnimatePresence>
+        {selectedCar && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
+          >
+            {/* Overlay background */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={closeCarModal}
+              className="absolute inset-0 bg-black/80 backdrop-blur-xl"
+            />
+            
+            {/* Modal Content */}
+            <motion.div 
+              initial={{ y: 50, opacity: 0, scale: 0.95 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: 20, opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.4, type: "spring", bounce: 0.2 }}
+              className="relative w-full max-w-5xl bg-obsidian border border-white/10 rounded-3xl overflow-hidden flex flex-col md:flex-row shadow-[0_0_50px_rgba(0,0,0,0.5)] z-10 max-h-[90vh]"
+            >
+              <button 
+                onClick={closeCarModal}
+                className="absolute top-6 right-6 z-20 p-2 bg-black/50 hover:bg-white text-white hover:text-black rounded-full transition-colors backdrop-blur-md"
+              >
+                <X className="w-6 h-6" />
+              </button>
+
+              {/* Image Side */}
+              <div className="w-full md:w-1/2 h-64 md:h-auto relative">
+                <Image 
+                  src={selectedCar.image} 
+                  alt={selectedCar.name} 
+                  fill 
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-transparent to-transparent md:bg-gradient-to-r" />
+              </div>
+
+              {/* Content Side */}
+              <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col overflow-y-auto">
+                {checkoutStep === 0 && (
+                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex flex-col h-full">
+                    <span className="text-silver uppercase tracking-[0.3em] text-xs font-bold mb-2">{selectedCar.category}</span>
+                    <h3 className="text-3xl md:text-5xl font-black text-white tracking-wide mb-6">{selectedCar.name}</h3>
+                    
+                    <p className="text-[#a0a5b0] text-lg font-light leading-relaxed mb-8">
+                      {selectedCar.description}
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-6 mb-10">
+                      <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+                        <span className="text-silver text-xs uppercase tracking-widest block mb-1">Moteur</span>
+                        <span className="text-white font-bold text-lg">{selectedCar.specs.engine}</span>
+                      </div>
+                      <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+                        <span className="text-silver text-xs uppercase tracking-widest block mb-1">Puissance</span>
+                        <span className="text-white font-bold text-lg">{selectedCar.specs.power}</span>
+                      </div>
+                      <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+                        <span className="text-silver text-xs uppercase tracking-widest block mb-1">0 - 100 km/h</span>
+                        <span className="text-white font-bold text-lg">{selectedCar.specs.acceleration}</span>
+                      </div>
+                      <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+                        <span className="text-silver text-xs uppercase tracking-widest block mb-1">Vitesse Max</span>
+                        <span className="text-white font-bold text-lg">{selectedCar.specs.topSpeed}</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-auto">
+                      <button 
+                        onClick={() => setCheckoutStep(1)}
+                        className="w-full py-4 bg-white text-black font-bold rounded-full tracking-widest hover:bg-silver transition-all duration-300 flex items-center justify-center"
+                      >
+                        RÉSERVER CE MODÈLE
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+
+                {checkoutStep === 1 && (
+                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex flex-col h-full">
+                    <button onClick={() => setCheckoutStep(0)} className="flex items-center text-silver hover:text-white mb-6 text-sm tracking-widest uppercase transition-colors"><ArrowLeft className="w-4 h-4 mr-2" /> Retour</button>
+                    <div className="flex items-center mb-8">
+                      <Calendar className="w-8 h-8 text-white mr-4" />
+                      <h3 className="text-3xl font-black text-white tracking-wide">Date & Heure</h3>
+                    </div>
+                    
+                    <div className="space-y-6 flex-grow">
+                      <div>
+                        <label className="block text-silver text-sm uppercase tracking-widest mb-2">Départ</label>
+                        <div className="flex gap-4">
+                          <input type="date" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-white/50" defaultValue="2026-05-10" />
+                          <input type="time" className="w-1/3 bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-white/50" defaultValue="09:00" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-silver text-sm uppercase tracking-widest mb-2">Retour</label>
+                        <div className="flex gap-4">
+                          <input type="date" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-white/50" defaultValue="2026-05-11" />
+                          <input type="time" className="w-1/3 bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-white/50" defaultValue="18:00" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-10">
+                      <button 
+                        onClick={() => setCheckoutStep(2)}
+                        className="w-full py-4 bg-white text-black font-bold rounded-full tracking-widest hover:bg-silver transition-all duration-300"
+                      >
+                        CONTINUER
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+
+                {checkoutStep === 2 && (
+                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex flex-col h-full">
+                    <button onClick={() => setCheckoutStep(1)} className="flex items-center text-silver hover:text-white mb-6 text-sm tracking-widest uppercase transition-colors"><ArrowLeft className="w-4 h-4 mr-2" /> Retour</button>
+                    <div className="flex items-center mb-8">
+                      <User className="w-8 h-8 text-white mr-4" />
+                      <h3 className="text-3xl font-black text-white tracking-wide">Informations</h3>
+                    </div>
+                    
+                    <div className="space-y-4 flex-grow overflow-y-auto pr-2">
+                      <div className="grid grid-cols-2 gap-4">
+                        <input type="text" placeholder="PRÉNOM" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/30 focus:outline-none focus:border-white/50" />
+                        <input type="text" placeholder="NOM" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/30 focus:outline-none focus:border-white/50" />
+                      </div>
+                      <input type="email" placeholder="EMAIL" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/30 focus:outline-none focus:border-white/50" />
+                      <input type="text" placeholder="TÉLÉPHONE" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/30 focus:outline-none focus:border-white/50" />
+                      <input type="text" placeholder="ADRESSE COMPLÈTE" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/30 focus:outline-none focus:border-white/50" />
+                      <div className="grid grid-cols-2 gap-4">
+                        <input type="number" placeholder="ÂGE" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/30 focus:outline-none focus:border-white/50" />
+                        <input type="text" placeholder="N° PERMIS" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/30 focus:outline-none focus:border-white/50" />
+                      </div>
+                    </div>
+
+                    <div className="mt-8">
+                      <button 
+                        onClick={() => setCheckoutStep(3)}
+                        className="w-full py-4 bg-white text-black font-bold rounded-full tracking-widest hover:bg-silver transition-all duration-300"
+                      >
+                        CONTINUER AU PAIEMENT
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+
+                {checkoutStep === 3 && (
+                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex flex-col h-full">
+                    <button onClick={() => setCheckoutStep(2)} className="flex items-center text-silver hover:text-white mb-6 text-sm tracking-widest uppercase transition-colors"><ArrowLeft className="w-4 h-4 mr-2" /> Retour</button>
+                    <div className="flex items-center mb-8">
+                      <CreditCard className="w-8 h-8 text-white mr-4" />
+                      <h3 className="text-3xl font-black text-white tracking-wide">Paiement</h3>
+                    </div>
+                    
+                    <div className="space-y-4 flex-grow">
+                      <button className="w-full py-4 bg-black border border-white text-white font-bold rounded-xl tracking-widest flex items-center justify-center hover:bg-white hover:text-black transition-colors mb-6">
+                         Pay
+                      </button>
+                      <div className="text-center text-silver text-xs tracking-widest mb-6">OU CARTE BANCAIRE</div>
+                      
+                      <input type="text" placeholder="NUMÉRO DE CARTE" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/30 focus:outline-none focus:border-white/50" />
+                      <div className="grid grid-cols-2 gap-4">
+                        <input type="text" placeholder="MM/AA" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/30 focus:outline-none focus:border-white/50" />
+                        <input type="text" placeholder="CVC" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/30 focus:outline-none focus:border-white/50" />
+                      </div>
+                      <input type="text" placeholder="NOM SUR LA CARTE" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/30 focus:outline-none focus:border-white/50" />
+                    </div>
+
+                    <div className="mt-8 flex justify-between items-center px-2 mb-4">
+                      <span className="text-silver uppercase tracking-widest text-sm">Total à payer</span>
+                      <span className="text-3xl font-bold text-white">1 500 €</span>
+                    </div>
+
+                    <div>
+                      <button 
+                        onClick={() => {
+                          setIsProcessingPayment(true);
+                          setTimeout(() => {
+                            setIsProcessingPayment(false);
+                            setCheckoutStep(4);
+                          }, 2000);
+                        }}
+                        disabled={isProcessingPayment}
+                        className="w-full py-4 bg-white text-black font-bold rounded-full tracking-widest hover:bg-silver transition-all duration-300 flex items-center justify-center disabled:opacity-50"
+                      >
+                        {isProcessingPayment && <Loader2 className="w-5 h-5 animate-spin mr-3" />}
+                        PAYER MAINTENANT
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+
+                {checkoutStep === 4 && (
+                  <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col h-full items-center justify-center text-center">
+                    <CheckCircle className="w-24 h-24 text-green-500 mb-8" />
+                    <h3 className="text-4xl font-black text-white tracking-wide mb-4 uppercase">Réservation Confirmée</h3>
+                    <p className="text-silver text-lg mb-12">
+                      Félicitations, votre {selectedCar.name} est réservée. Un email de confirmation vous a été envoyé.
+                    </p>
+                    <button 
+                      onClick={closeCarModal}
+                      className="px-10 py-4 bg-white text-black font-bold rounded-full tracking-widest hover:bg-silver transition-all duration-300"
+                    >
+                      FERMER
+                    </button>
+                  </motion.div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
