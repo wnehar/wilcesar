@@ -14,7 +14,7 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
-      className="h-full antialiased dark"
+      className="h-full antialiased dark scroll-smooth"
     >
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
