@@ -2,25 +2,61 @@
 
 import Image from "next/image";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { ChevronRight, ArrowRight, ChevronDown } from "lucide-react";
-import { useRef, useState } from "react";
+import { ChevronRight, ArrowRight, ChevronDown, Loader2, X } from "lucide-react";
+import { useRef, useState, useEffect } from "react";
 
 const CARS = [
-  { id: 1, name: "BMW M4 Competition", category: "Sportive", image: "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?q=80&w=800", badges: ["NOUVEAUTÉ", "510 CH"] },
-  { id: 2, name: "Audi RS6 Avant", category: "Sportive", image: "https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?q=80&w=800", badges: ["V8", "QUATTRO"] },
-  { id: 3, name: "Mercedes AMG GT", category: "Sportive", image: "https://images.unsplash.com/photo-1617531653332-bd46c24f2068?q=80&w=800", badges: ["V8 BITURBO"] },
-  { id: 5, name: "Ferrari F8 Tributo", category: "Supercar", image: "https://images.unsplash.com/photo-1592198084033-aade902d1aae?q=80&w=800", badges: ["V8", "720 CH"] },
-  { id: 6, name: "Lamborghini Huracán", category: "Supercar", image: "https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?q=80&w=800", badges: ["V10"] },
-  { id: 7, name: "McLaren 720S", category: "Supercar", image: "https://images.unsplash.com/photo-1621135802920-133df287f89c?q=80&w=800", badges: ["AÉRO"] },
-  { id: 8, name: "Bugatti Chiron", category: "Hypercar", image: "https://images.unsplash.com/photo-1600712242805-5f78671b24da?q=80&w=800", badges: ["W16", "1500 CH"] },
-  { id: 9, name: "Pagani Huayra", category: "Hypercar", image: "https://images.unsplash.com/photo-1545642412-1cd925187af7?q=80&w=800", badges: ["V12", "ART"] },
-  { id: 10, name: "Koenigsegg Jesko", category: "Hypercar", image: "https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?q=80&w=800", badges: ["V8", "PISTE"] }
+  { 
+    id: 1, name: "BMW M4 Competition", category: "Sportive", image: "/cars/bmw_m4.jpg", badges: ["NOUVEAUTÉ", "510 CH"],
+    specs: { engine: "6 en ligne 3.0L Bi-Turbo", power: "510 CH", acceleration: "3.9s", topSpeed: "290 km/h" },
+    description: "La quintessence de la sportivité allemande. Un coupé racé offrant un compromis parfait entre confort au quotidien et performances redoutables."
+  },
+  { 
+    id: 2, name: "Audi RS6 Avant", category: "Sportive", image: "/cars/audi_rs6.avif", badges: ["V8", "QUATTRO"],
+    specs: { engine: "V8 4.0L TFSI Bi-Turbo", power: "600 CH", acceleration: "3.6s", topSpeed: "305 km/h" },
+    description: "Le break familial le plus brutal du marché. Une polyvalence exceptionnelle couplée à des accélérations foudroyantes grâce au système Quattro."
+  },
+  { 
+    id: 3, name: "Mercedes AMG GT", category: "Sportive", image: "/cars/mercedes_amg_gt.jpg", badges: ["V8 BITURBO"],
+    specs: { engine: "V8 4.0L Bi-Turbo", power: "585 CH", acceleration: "3.6s", topSpeed: "318 km/h" },
+    description: "L'esprit de la course automobile encapsulé dans une silhouette d'une élégance rare. Un V8 tonitruant signé Affalterbach."
+  },
+  { 
+    id: 5, name: "Ferrari F8 Tributo", category: "Supercar", image: "/cars/ferrari_f8.jpg", badges: ["V8", "720 CH"],
+    specs: { engine: "V8 3.9L Bi-Turbo", power: "720 CH", acceleration: "2.9s", topSpeed: "340 km/h" },
+    description: "Un hommage roulant au moteur V8 le plus primé de l'histoire de Maranello. Une agilité phénoménale sur piste comme sur route."
+  },
+  { 
+    id: 6, name: "Lamborghini Huracán", category: "Supercar", image: "/cars/lamborghini_huracan.jpg", badges: ["V10"],
+    specs: { engine: "V10 5.2L Atmosphérique", power: "640 CH", acceleration: "2.9s", topSpeed: "325 km/h" },
+    description: "Le hurlement de son V10 atmosphérique est légendaire. Un taureau mécanique sculpté pour l'émotion pure et la précision chirurgicale."
+  },
+  { 
+    id: 7, name: "McLaren 720S", category: "Supercar", image: "/cars/mclaren_720s.jpg", badges: ["AÉRO"],
+    specs: { engine: "V8 4.0L Bi-Turbo", power: "720 CH", acceleration: "2.9s", topSpeed: "341 km/h" },
+    description: "La supercar britannique qui redéfinit les lois de l'aérodynamisme. Légère, incisive et d'une vélocité diabolique."
+  },
+  { 
+    id: 8, name: "Bugatti Chiron", category: "Hypercar", image: "/cars/bugatti_chiron.jpg", badges: ["W16", "1500 CH"],
+    specs: { engine: "W16 8.0L Quadri-Turbo", power: "1500 CH", acceleration: "2.4s", topSpeed: "420 km/h" },
+    description: "L'apogée absolue de l'ingénierie automobile. Une hypercar hors norme alliant luxe royal et vitesse de pointe vertigineuse."
+  },
+  { 
+    id: 9, name: "Pagani Huayra", category: "Hypercar", image: "/cars/pagani_huayra.jpg", badges: ["V12", "ART"],
+    specs: { engine: "V12 6.0L Bi-Turbo (AMG)", power: "730 CH", acceleration: "2.8s", topSpeed: "383 km/h" },
+    description: "Une œuvre d'art sur roues forgée en titane et carbone. Chaque détail de la Huayra a été dessiné par le maître Horacio Pagani."
+  },
+  { 
+    id: 10, name: "Koenigsegg Jesko", category: "Hypercar", image: "/cars/jesko.jpg", badges: ["V8", "PISTE"],
+    specs: { engine: "V8 5.0L Bi-Turbo", power: "1600 CH", acceleration: "2.5s", topSpeed: "480 km/h" },
+    description: "Un monstre taillé pour pulvériser les records. Équipée d'une transmission révolutionnaire LST et d'un appui aérodynamique colossal."
+  }
 ];
 
 const SUBSCRIPTIONS = [
-  { title: "SPORTIVE", desc: "4 véhicules d'exception. Idéal pour s'initier aux sensations fortes sur notre circuit.", price: "499€", cars: 4 },
-  { title: "SUPERCAR", desc: "3 monstres de puissance. Accédez à l'élite de l'ingénierie automobile.", price: "1 299€", cars: 3 },
-  { title: "HYPERCAR", desc: "3 légendes absolues. L'expérience ultime, réservée à une poignée de passionnés.", price: "3 499€", cars: 3 },
+  { title: "SPORTIVE", desc: "4 véhicules d'exception. Idéal pour s'initier aux sensations fortes sur notre circuit.", price: "499€", priceAmount: 499, cars: 4 },
+  { title: "SUPERCAR", desc: "3 monstres de puissance. Accédez à l'élite de l'ingénierie automobile.", price: "1 299€", priceAmount: 1299, cars: 3 },
+  { title: "HYPERCAR", desc: "3 légendes absolues. L'expérience ultime, réservée à une poignée de passionnés.", price: "3 499€", priceAmount: 3499, cars: 3 },
 ];
 
 const AnimatedBackground = () => {
@@ -52,6 +88,35 @@ const AnimatedBackground = () => {
 
 export default function Home() {
   const [openCategory, setOpenCategory] = useState<string | null>("Sportive");
+  const [loadingCheckout, setLoadingCheckout] = useState<string | null>(null);
+  const [selectedCar, setSelectedCar] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (selectedCar) document.body.style.overflow = "hidden";
+    else document.body.style.overflow = "unset";
+    return () => { document.body.style.overflow = "unset" };
+  }, [selectedCar]);
+
+  const handleCheckout = async (itemName: string, itemPrice: number) => {
+    try {
+      setLoadingCheckout(itemName);
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemName, itemPrice }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error || "Une erreur est survenue");
+        setLoadingCheckout(null);
+      }
+    } catch (err) {
+      alert("Erreur réseau");
+      setLoadingCheckout(null);
+    }
+  };
   const containerRef = useRef(null);
   const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start start", "end end"] });
   const bgOpacity = useTransform(scrollYProgress, [0, 0.3], [1, 0.4]);
@@ -148,14 +213,23 @@ export default function Home() {
                 <p className="text-silver text-lg mb-12 flex-grow leading-relaxed">{sub.desc}</p>
               </div>
 
-              <div className="relative z-10 flex items-end justify-between mt-auto pt-8 border-t border-border-subtle">
-                <div>
-                  <span className="text-5xl font-bold text-white tracking-tighter">{sub.price}</span>
-                  <span className="text-silver text-sm ml-2 tracking-widest uppercase">/ mois</span>
+              <div className="relative z-10 flex flex-col mt-auto pt-8 border-t border-border-subtle">
+                <div className="flex items-end justify-between mb-6">
+                  <div>
+                    <span className="text-5xl font-bold text-white tracking-tighter">{sub.price}</span>
+                    <span className="text-silver text-sm ml-2 tracking-widest uppercase">/ mois</span>
+                  </div>
+                  <span className="text-xs font-bold px-4 py-2 bg-obsidian border border-border-subtle rounded-full text-white tracking-widest shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+                    {sub.cars} MODÈLES
+                  </span>
                 </div>
-                <span className="text-xs font-bold px-4 py-2 bg-obsidian border border-border-subtle rounded-full text-white tracking-widest shadow-[0_0_15px_rgba(255,255,255,0.1)]">
-                  {sub.cars} MODÈLES
-                </span>
+                <button 
+                  onClick={() => handleCheckout(`Abonnement ${sub.title}`, sub.priceAmount)}
+                  disabled={loadingCheckout === `Abonnement ${sub.title}`}
+                  className="w-full py-4 bg-white text-black font-bold rounded-full tracking-widest hover:bg-silver transition-all duration-300 flex items-center justify-center disabled:opacity-50"
+                >
+                  {loadingCheckout === `Abonnement ${sub.title}` ? <Loader2 className="w-5 h-5 animate-spin" /> : "SÉLECTIONNER"}
+                </button>
               </div>
             </motion.div>
           ))}
@@ -217,14 +291,16 @@ export default function Home() {
                 </motion.li>
               ))}
             </ul>
-            <motion.a 
-              href="#stages"
+            <motion.button 
+              onClick={() => handleCheckout("Stage de Pilotage", 399)}
+              disabled={loadingCheckout === "Stage de Pilotage"}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="inline-block group px-10 py-4 border border-white/30 text-white font-bold rounded-full tracking-widest hover:bg-white hover:text-black transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.05)] hover:shadow-[0_0_30px_rgba(255,255,255,0.2)]"
+              className="inline-block group px-10 py-4 border border-white/30 text-white font-bold rounded-full tracking-widest hover:bg-white hover:text-black transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.05)] hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] disabled:opacity-50 flex items-center justify-center"
             >
+              {loadingCheckout === "Stage de Pilotage" && <Loader2 className="w-5 h-5 animate-spin mr-3" />}
               RÉSERVER UN STAGE
-            </motion.a>
+            </motion.button>
           </motion.div>
         </div>
       </section>
@@ -273,7 +349,7 @@ export default function Home() {
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12"
             >
               {CARS.filter(c => c.category === openCategory).map((car) => (
-                <div key={car.id} className="group cursor-pointer">
+                <div key={car.id} onClick={() => setSelectedCar(car)} className="group cursor-pointer">
                   <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl mb-6 shadow-2xl">
                     <Image 
                       src={car.image} 
@@ -316,14 +392,15 @@ export default function Home() {
             <span className="text-white font-black tracking-[0.15em]">ZENTURO</span>
             <span className="text-silver/70 ml-3 hidden sm:inline font-light tracking-wide">| Prêt à piloter ?</span>
           </div>
-          <motion.a 
-            href="#abonnements"
+          <motion.button 
+            onClick={() => handleCheckout("Pass Premium Zenturo", 999)}
+            disabled={loadingCheckout === "Pass Premium Zenturo"}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="bg-white text-black px-8 py-3.5 rounded-full font-bold tracking-widest text-xs hover:bg-silver transition-all ml-4 flex items-center gap-2 cursor-pointer"
+            className="bg-white text-black px-8 py-3.5 rounded-full font-bold tracking-widest text-xs hover:bg-silver transition-all ml-4 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
-            RÉSERVER
-          </motion.a>
+            {loadingCheckout === "Pass Premium Zenturo" ? <Loader2 className="w-4 h-4 animate-spin" /> : "RÉSERVER"}
+          </motion.button>
         </div>
       </motion.div>
     </div>
