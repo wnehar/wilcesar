@@ -1,15 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { motion, useScroll, useTransform } from "framer-motion";
-import { ChevronRight, ArrowRight } from "lucide-react";
-import { useRef } from "react";
+import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import { ChevronRight, ArrowRight, ChevronDown } from "lucide-react";
+import { useRef, useState } from "react";
 
 const CARS = [
   { id: 1, name: "BMW M4 Competition", category: "Sportive", image: "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?q=80&w=800", badges: ["NOUVEAUTÉ", "510 CH"] },
   { id: 2, name: "Audi RS6 Avant", category: "Sportive", image: "https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?q=80&w=800", badges: ["V8", "QUATTRO"] },
   { id: 3, name: "Mercedes AMG GT", category: "Sportive", image: "https://images.unsplash.com/photo-1617531653332-bd46c24f2068?q=80&w=800", badges: ["V8 BITURBO"] },
-  { id: 4, name: "Porsche 718 Cayman", category: "Sportive", image: "https://images.unsplash.com/photo-1503376712341-0048238e9ee0?q=80&w=800", badges: ["CIRCUIT"] },
   { id: 5, name: "Ferrari F8 Tributo", category: "Supercar", image: "https://images.unsplash.com/photo-1592198084033-aade902d1aae?q=80&w=800", badges: ["V8", "720 CH"] },
   { id: 6, name: "Lamborghini Huracán", category: "Supercar", image: "https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?q=80&w=800", badges: ["V10"] },
   { id: 7, name: "McLaren 720S", category: "Supercar", image: "https://images.unsplash.com/photo-1621135802920-133df287f89c?q=80&w=800", badges: ["AÉRO"] },
@@ -52,27 +51,33 @@ const AnimatedBackground = () => {
 };
 
 export default function Home() {
+  const [openCategory, setOpenCategory] = useState<string | null>("Sportive");
   const containerRef = useRef(null);
   const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start start", "end end"] });
-  const opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
-  const scale = useTransform(scrollYProgress, [0, 0.2], [1, 1.1]);
+  const bgOpacity = useTransform(scrollYProgress, [0, 0.3], [1, 0.4]);
+  const globalCarX = useTransform(scrollYProgress, [0, 1], ["0%", "-15%"]);
 
   return (
     <div className="relative w-full" ref={containerRef}>
-      <AnimatedBackground />
-
-      {/* HERO SECTION */}
-      <section className="relative min-h-[100vh] flex flex-col items-center justify-center overflow-hidden px-6 perspective-1000">
-        <motion.div style={{ opacity, scale }} className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-gradient-to-b from-obsidian/30 via-obsidian/80 to-obsidian z-10"></div>
+      {/* GLOBAL FIXED ANIMATED BACKGROUND IMAGE */}
+      <motion.div style={{ opacity: bgOpacity }} className="fixed inset-0 z-[-3] pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-obsidian/40 to-obsidian/80 z-10"></div>
+        <motion.div style={{ x: globalCarX }} className="absolute inset-0 w-[130%] h-[120%] top-[-10%] left-0">
           <Image 
             src="https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?q=80&w=2000" 
             alt="Hero Background" 
             fill 
-            className="object-cover opacity-40 mix-blend-luminosity"
+            className="object-cover opacity-90"
             priority
           />
         </motion.div>
+      </motion.div>
+
+      <AnimatedBackground />
+
+      {/* HERO SECTION */}
+      <section className="relative min-h-[100vh] flex flex-col items-center justify-center px-6 perspective-1000">
+
         
         <div className="relative z-10 flex flex-col items-center text-center max-w-5xl mx-auto mt-20">
           <motion.div
@@ -226,55 +231,71 @@ export default function Home() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
-          className="text-center mb-24"
+          className="text-center mb-16"
         >
           <h2 className="text-5xl md:text-7xl font-bold tracking-[0.1em] text-white mb-6">LE CATALOGUE</h2>
           <p className="text-silver text-xl md:text-2xl font-light">10 chefs-d'œuvre de l'ingénierie automobile.</p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {CARS.map((car, i) => (
-            <motion.div 
-              key={car.id} 
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.6, delay: (i % 3) * 0.15 }}
-              whileHover={{ y: -5 }}
-              className="group relative bg-surface border border-white/5 rounded-2xl overflow-hidden cursor-pointer shadow-xl hover:shadow-[0_0_40px_rgba(255,255,255,0.1)] transition-all"
+        {/* TABS NAVIGATION */}
+        <div className="flex justify-center gap-8 md:gap-16 mb-16 border-b border-white/10 pb-2">
+          {["Sportive", "Supercar", "Hypercar"].map((tab) => (
+            <button 
+              key={tab}
+              onClick={() => setOpenCategory(tab)}
+              className={`relative pb-4 text-sm md:text-xl font-bold tracking-widest uppercase transition-colors duration-300 ${openCategory === tab ? 'text-white' : 'text-silver/40 hover:text-white'}`}
             >
-              <div className="relative aspect-[4/3] w-full overflow-hidden">
-                <div className="absolute inset-0 bg-obsidian/40 group-hover:bg-transparent transition-colors z-10 duration-700"></div>
-                <Image 
-                  src={car.image} 
-                  alt={car.name} 
-                  fill 
-                  className="object-cover transform group-hover:scale-110 transition-transform duration-1000 ease-[0.16,1,0.3,1]"
+              {tab}
+              {openCategory === tab && (
+                <motion.div 
+                  layoutId="activeTabIndicator"
+                  className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-white"
                 />
-                
-                {/* Glow overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-transparent to-transparent opacity-80 z-10"></div>
-                
-                <div className="absolute top-5 left-5 z-20 flex gap-2">
-                  <span className="px-3 py-1.5 bg-[#1b1c1e]/80 backdrop-blur-md text-[10px] font-black tracking-widest text-white rounded shadow-sm border border-white/10">
-                    {car.category.toUpperCase()}
-                  </span>
-                  {car.badges.map(badge => (
-                    <span key={badge} className="px-3 py-1.5 bg-white/10 backdrop-blur-md border border-white/20 text-[10px] font-bold tracking-widest text-white rounded">
-                      {badge}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div className="absolute bottom-0 left-0 w-full p-6 z-20 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                <h4 className="text-2xl font-bold text-white tracking-wider drop-shadow-md">{car.name}</h4>
-                <div className="mt-4 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                  <span className="text-sm font-bold tracking-widest text-white">DÉCOUVRIR</span>
-                  <ArrowRight className="w-5 h-5 text-white" />
-                </div>
-              </div>
-            </motion.div>
+              )}
+            </button>
           ))}
+        </div>
+
+        {/* CARDS GRID */}
+        <div className="min-h-[500px]">
+          <AnimatePresence mode="wait">
+            <motion.div 
+              key={openCategory}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.4, ease: "easeInOut" }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12"
+            >
+              {CARS.filter(c => c.category === openCategory).map((car) => (
+                <div key={car.id} className="group cursor-pointer">
+                  <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl mb-6 shadow-2xl">
+                    <Image 
+                      src={car.image} 
+                      alt={car.name} 
+                      fill 
+                      className="object-cover transform group-hover:scale-105 transition-transform duration-1000 ease-[0.16,1,0.3,1]"
+                    />
+                    <div className="absolute inset-0 bg-obsidian/20 group-hover:bg-transparent transition-colors duration-700"></div>
+                    <div className="absolute top-4 left-4 z-20 flex flex-wrap gap-2">
+                      {car.badges.map(badge => (
+                        <span key={badge} className="px-3 py-1 bg-obsidian/80 backdrop-blur-md border border-white/10 text-[10px] font-bold tracking-widest text-white rounded">
+                          {badge}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="px-2">
+                    <h4 className="text-2xl font-bold text-white tracking-widest uppercase mb-2">{car.name}</h4>
+                    <div className="flex items-center text-silver/60 group-hover:text-white transition-colors duration-300">
+                      <span className="text-xs font-bold tracking-[0.2em]">DÉCOUVRIR LE VÉHICULE</span>
+                      <ArrowRight className="w-4 h-4 ml-3 transform group-hover:translate-x-2 transition-transform duration-300" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </section>
 
