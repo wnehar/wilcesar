@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { ChevronRight, ArrowRight, ChevronDown, Loader2, X, Calendar, User, CreditCard, CheckCircle, ArrowLeft } from "lucide-react";
+import { ChevronRight, ArrowRight, ChevronDown, Loader2, X, Calendar, User, CreditCard, CheckCircle, ArrowLeft, Mail } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 
 const CARS = [
@@ -88,42 +88,20 @@ const AnimatedBackground = () => {
 
 export default function Home() {
   const [openCategory, setOpenCategory] = useState<string | null>("Sportive");
-  const [loadingCheckout, setLoadingCheckout] = useState<string | null>(null);
-  const [selectedCar, setSelectedCar] = useState<any | null>(null);
+  const [checkoutItem, setCheckoutItem] = useState<{ type: 'car' | 'sub' | 'stage', data: any } | null>(null);
   const [checkoutStep, setCheckoutStep] = useState<number>(0);
   const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
 
   const closeCarModal = () => {
-    setSelectedCar(null);
+    setCheckoutItem(null);
     setTimeout(() => setCheckoutStep(0), 300);
   };
 
   useEffect(() => {
-    if (selectedCar) document.body.style.overflow = "hidden";
+    if (checkoutItem) document.body.style.overflow = "hidden";
     else document.body.style.overflow = "unset";
     return () => { document.body.style.overflow = "unset" };
-  }, [selectedCar]);
-
-  const handleCheckout = async (itemName: string, itemPrice: number) => {
-    try {
-      setLoadingCheckout(itemName);
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itemName, itemPrice }),
-      });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        alert(data.error || "Une erreur est survenue");
-        setLoadingCheckout(null);
-      }
-    } catch (err) {
-      alert("Erreur réseau");
-      setLoadingCheckout(null);
-    }
-  };
+  }, [checkoutItem]);
   const containerRef = useRef(null);
   const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start start", "end end"] });
   const bgOpacity = useTransform(scrollYProgress, [0, 0.3], [1, 0.4]);
@@ -231,11 +209,10 @@ export default function Home() {
                   </span>
                 </div>
                 <button 
-                  onClick={() => handleCheckout(`Abonnement ${sub.title}`, sub.priceAmount)}
-                  disabled={loadingCheckout === `Abonnement ${sub.title}`}
-                  className="w-full py-4 bg-white text-black font-bold rounded-full tracking-widest hover:bg-silver transition-all duration-300 flex items-center justify-center disabled:opacity-50"
+                  onClick={() => setCheckoutItem({ type: 'sub', data: sub })}
+                  className="w-full py-4 bg-white text-black font-bold rounded-full tracking-widest hover:bg-silver transition-all duration-300 flex items-center justify-center"
                 >
-                  {loadingCheckout === `Abonnement ${sub.title}` ? <Loader2 className="w-5 h-5 animate-spin" /> : "SÉLECTIONNER"}
+                  SÉLECTIONNER
                 </button>
               </div>
             </motion.div>
@@ -356,7 +333,7 @@ export default function Home() {
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12"
             >
               {CARS.filter(c => c.category === openCategory).map((car) => (
-                <div key={car.id} onClick={() => setSelectedCar(car)} className="group cursor-pointer">
+                <div key={car.id} onClick={() => setCheckoutItem({ type: 'car', data: car })} className="group cursor-pointer">
                   <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl mb-6 shadow-2xl">
                     <Image 
                       src={car.image} 
@@ -400,13 +377,12 @@ export default function Home() {
             <span className="text-silver/70 ml-3 hidden sm:inline font-light tracking-wide">| Prêt à piloter ?</span>
           </div>
           <motion.button 
-            onClick={() => handleCheckout("Pass Premium Zenturo", 999)}
-            disabled={loadingCheckout === "Pass Premium Zenturo"}
+            onClick={() => setCheckoutItem({ type: 'stage', data: { name: "Pass Premium Zenturo", price: "999€", priceAmount: 999 } })}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="bg-white text-black px-8 py-3.5 rounded-full font-bold tracking-widest text-xs hover:bg-silver transition-all ml-4 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            className="bg-white text-black px-8 py-3.5 rounded-full font-bold tracking-widest text-xs hover:bg-silver transition-all ml-4 flex items-center justify-center gap-2 cursor-pointer"
           >
-            {loadingCheckout === "Pass Premium Zenturo" ? <Loader2 className="w-4 h-4 animate-spin" /> : "RÉSERVER"}
+            RÉSERVER
           </motion.button>
         </div>
       </motion.div>
