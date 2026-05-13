@@ -92,6 +92,8 @@ export default function StageReservationFlow() {
   const [cardName, setCardName] = useState("");
 
   const prixUnitaireBrut = prixTourBrut(typeVehicule);
+  const libelleCategorie =
+    TYPES_VEHICULE.find((t) => t.value === typeVehicule)?.label ?? "";
   const prixTotal = useMemo(
     () =>
       calculerPrixStage(typeVehicule, nombreTours, offre.coeff),
@@ -267,10 +269,72 @@ export default function StageReservationFlow() {
                   >
                     {TYPES_VEHICULE.map((t) => (
                       <option key={t.value} value={t.value} className="bg-obsidian">
-                        {t.label}
+                        {t.label} — {t.prixTour} € / tour
                       </option>
                     ))}
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-silver text-xs uppercase tracking-widest mb-2">
+                    Nombre de tours de circuit
+                  </label>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <input
+                      type="number"
+                      min={MIN_TOURS}
+                      max={MAX_TOURS}
+                      value={nombreTours}
+                      onChange={(e) => {
+                        const raw = parseInt(e.target.value, 10);
+                        if (Number.isNaN(raw)) {
+                          setNombreTours(MIN_TOURS);
+                          return;
+                        }
+                        setNombreTours(
+                          Math.min(MAX_TOURS, Math.max(MIN_TOURS, raw))
+                        );
+                      }}
+                      className="w-28 bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white text-center font-bold tabular-nums focus:outline-none focus:border-white/40"
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      {[2, 4, 6, 8, 10].map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => setNombreTours(n)}
+                          className={`px-3 py-1.5 rounded-full text-xs font-bold tracking-widest border transition-colors ${
+                            nombreTours === n
+                              ? "border-white bg-white text-black"
+                              : "border-white/15 text-silver hover:border-white/40"
+                          }`}
+                        >
+                          {n} tours
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="mt-2 text-xs text-silver">
+                    Minimum {MIN_TOURS} tours. Maximum {MAX_TOURS} tours par
+                    réservation.
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4">
+                  <p className="text-xs uppercase tracking-widest text-silver mb-1">
+                    Estimation
+                  </p>
+                  <p className="text-lg text-white font-semibold tabular-nums">
+                    {nombreTours} tour{nombreTours > 1 ? "s" : ""} ×{" "}
+                    {prixUnitaireBrut} €
+                    {offre.coeff !== 1 ? (
+                      <span className="text-silver font-normal">
+                        {" "}
+                        × {offre.coeff} (offre)
+                      </span>
+                    ) : null}{" "}
+                    = <span className="text-white">{formatEuros(prixTotal)}</span>
+                  </p>
                 </div>
 
                 <button
@@ -439,10 +503,10 @@ export default function StageReservationFlow() {
                   <h2 className="text-xl font-bold tracking-wide">Paiement</h2>
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 space-y-2 text-sm">
+                <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 space-y-3 text-sm">
                   <div className="flex justify-between text-silver">
                     <span>Offre</span>
-                    <span className="text-white">{offre.titre}</span>
+                    <span className="text-white text-right">{offre.titre}</span>
                   </div>
                   <div className="flex justify-between text-silver">
                     <span>Date & heure</span>
@@ -450,19 +514,41 @@ export default function StageReservationFlow() {
                       {dateSession} à {heureSession}
                     </span>
                   </div>
-                  <div className="h-px bg-white/10 my-3" />
-                  <div className="flex justify-between items-baseline">
+                  <div className="flex justify-between text-silver">
+                    <span>Catégorie</span>
+                    <span className="text-white text-right">{libelleCategorie}</span>
+                  </div>
+                  <div className="flex justify-between text-silver">
+                    <span>Nombre de tours</span>
+                    <span className="text-white font-semibold tabular-nums">
+                      {nombreTours} tour{nombreTours > 1 ? "s" : ""}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-silver">
+                    <span>Tarif / tour (base)</span>
+                    <span className="text-white tabular-nums">
+                      {prixUnitaireBrut} €
+                    </span>
+                  </div>
+                  {offre.coeff !== 1 && (
+                    <div className="flex justify-between text-silver">
+                      <span>Coefficient offre Premium</span>
+                      <span className="text-white tabular-nums">× {offre.coeff}</span>
+                    </div>
+                  )}
+                  <div className="h-px bg-white/10 my-2" />
+                  <div className="flex justify-between items-baseline gap-4">
                     <span className="text-silver">Total stage</span>
-                    <span className="text-2xl font-black text-white">
-                      {offre.prixLabel}
+                    <span className="text-2xl font-black text-white tabular-nums shrink-0">
+                      {formatEuros(prixTotal)}
                     </span>
                   </div>
                   {paymentMode === "onsite" && (
                     <p className="text-xs text-silver pt-2 leading-relaxed">
                       Paiement sur place : un acompte de{" "}
-                      <strong className="text-white">{acompte}€</strong> est
+                      <strong className="text-white">{acompte} €</strong> est
                       demandé maintenant pour bloquer votre créneau. Le solde (
-                      {offre.prix - acompte}€) sera réglé le jour du stage.
+                      {prixTotal - acompte} €) sera réglé le jour du stage.
                     </p>
                   )}
                 </div>
@@ -555,8 +641,8 @@ export default function StageReservationFlow() {
                         ? "Acompte à régler maintenant"
                         : "Montant simulé"}
                     </span>
-                    <span className="text-2xl font-black text-white">
-                      {montantAPayer}€
+                    <span className="text-2xl font-black text-white tabular-nums">
+                      {formatEuros(montantAPayer)}
                     </span>
                   </div>
                   <button
@@ -571,7 +657,7 @@ export default function StageReservationFlow() {
                     {paymentMode === "apple" && "Payer avec Apple Pay"}
                     {paymentMode === "card" && "Payer par carte"}
                     {paymentMode === "onsite" &&
-                      `Valider l'acompte (${acompte}€)`}
+                      `Valider l'acompte (${formatEuros(acompte)})`}
                   </button>
                   <p className="text-center text-silver/70 text-xs mt-4">
                     Aucun paiement réel — redirection vers la page de
