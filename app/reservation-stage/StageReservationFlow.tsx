@@ -12,7 +12,12 @@ import {
   User,
   Wallet,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { CARS } from "@/data/cars";
+import {
+  getSessionEmail,
+  recordReservationAfterPayment,
+} from "@/lib/zenturo-storage";
 
 const OFFRES = {
   decouverte: {
@@ -37,6 +42,20 @@ const TYPES_VEHICULE = [
 
 const MIN_TOURS = 2;
 const MAX_TOURS = 40;
+
+/** Catégorie catalogue (libellé) ↔ type de réservation (valeur select). */
+const CATEGORIE_PAR_TYPE: Record<string, string | null> = {
+  sportive: "Sportive",
+  supercar: "Supercar",
+  hypercar: "Hypercar",
+  conseiller: null,
+};
+
+function voituresPourType(typeVehicule: string) {
+  const cat = CATEGORIE_PAR_TYPE[typeVehicule];
+  if (cat === null || cat === undefined) return CARS;
+  return CARS.filter((c) => c.category === cat);
+}
 
 function prixTourBrut(typeVehicule: string) {
   const row = TYPES_VEHICULE.find((t) => t.value === typeVehicule);
@@ -75,6 +94,7 @@ export default function StageReservationFlow() {
   const [dateSession, setDateSession] = useState("");
   const [heureSession, setHeureSession] = useState("10:00");
   const [typeVehicule, setTypeVehicule] = useState<string>("sportive");
+  const [voitureId, setVoitureId] = useState<number>(CARS[0].id);
   const [nombreTours, setNombreTours] = useState<number>(MIN_TOURS);
 
   const [prenom, setPrenom] = useState("");
@@ -94,6 +114,24 @@ export default function StageReservationFlow() {
   const prixUnitaireBrut = prixTourBrut(typeVehicule);
   const libelleCategorie =
     TYPES_VEHICULE.find((t) => t.value === typeVehicule)?.label ?? "";
+
+  const voituresDisponibles = useMemo(
+    () => voituresPourType(typeVehicule),
+    [typeVehicule]
+  );
+
+  useEffect(() => {
+    setVoitureId((prev) => {
+      if (voituresDisponibles.some((c) => c.id === prev)) return prev;
+      return voituresDisponibles[0]?.id ?? prev;
+    });
+  }, [typeVehicule, voituresDisponibles]);
+
+  const voitureChoisie = useMemo(
+    () => voituresDisponibles.find((c) => c.id === voitureId) ?? voituresDisponibles[0],
+    [voituresDisponibles, voitureId]
+  );
+
   const prixTotal = useMemo(
     () =>
       calculerPrixStage(typeVehicule, nombreTours, offre.coeff),
@@ -109,6 +147,7 @@ export default function StageReservationFlow() {
     dateSession &&
     heureSession &&
     typeVehicule &&
+    voitureChoisie &&
     nombreTours >= MIN_TOURS &&
     nombreTours <= MAX_TOURS;
   const step2Valid =
@@ -137,6 +176,22 @@ export default function StageReservationFlow() {
     setProcessing(true);
     setTimeout(() => {
       setProcessing(false);
+      recordReservationAfterPayment(getSessionEmail(), email, {
+        type: "stage",
+        titre: `Stage — ${offre.titre}`,
+        sousTitre: `${voitureChoisie.name} · ${nombreTours} tours`,
+        montantEuros: montantAPayer,
+        meta: {
+          dateSession,
+          heureSession,
+          typeVehicule,
+          voiture: voitureChoisie.name,
+          offre: offreParam,
+          tours: nombreTours,
+          totalStageEuros: prixTotal,
+          paymentMode,
+        },
+      });
       router.push("/success");
     }, 1800);
   }
@@ -277,8 +332,58 @@ export default function StageReservationFlow() {
 
                 <div>
                   <label className="block text-silver text-xs uppercase tracking-widest mb-2">
-                    Nombre de tours de circuit
+                    Modèle de véhicule
                   </label>
+                  <select
+                    value={voitureId}
+                    onChange={(e) => setVoitureId(Number(e.target.value))}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-white/40 appearance-none cursor-pointer"
+                    style={{
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23CECECE' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E")`,
+                      backgroundRepeat: "no-repeat",
+                      backgroundPosition: "right 1rem center",
+                    }}
+                  >
+                    {typeVehicule === "conseiller" ? (
+                      ["Sportive", "Supercar", "Hypercar"].map((cat) => {
+                        const group = CARS.filter((c) => c.category === cat);
+                        if (!group.length) return null;
+                        return (
+                          <optgroup key={cat} label={cat}>
+                            {group.map((car) => (
+                              <option
+                                key={car.id}
+                                value={car.id}
+                                className="bg-obsidian"
+                              >
+                                {car.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        );
+                      })
+                    ) : (
+                      voituresDisponibles.map((car) => (
+                        <option
+                          key={car.id}
+                          value={car.id}
+                          className="bg-obsidian"
+                        >
+                          {car.name}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                  {voitureChoisie && typeVehicule === "conseiller" ? (
+                    <p className="mt-2 text-xs text-silver leading-relaxed">
+                      Avec l&apos;option conseiller, le modèle exact peut être
+                      ajusté sur place selon disponibilité ; votre choix sert de
+                      préférence ({voitureChoisie.category}).
+                    </p>
+                  ) : null}
+                </div>
+
+                <div>
                   <div className="flex flex-wrap items-center gap-3">
                     <input
                       type="number"
@@ -335,6 +440,14 @@ export default function StageReservationFlow() {
                     ) : null}{" "}
                     = <span className="text-white">{formatEuros(prixTotal)}</span>
                   </p>
+                  {voitureChoisie ? (
+                    <p className="text-sm text-silver mt-3 pt-3 border-t border-white/10">
+                      Modèle :{" "}
+                      <span className="text-white font-medium">
+                        {voitureChoisie.name}
+                      </span>
+                    </p>
+                  ) : null}
                 </div>
 
                 <button
@@ -517,6 +630,12 @@ export default function StageReservationFlow() {
                   <div className="flex justify-between text-silver">
                     <span>Catégorie</span>
                     <span className="text-white text-right">{libelleCategorie}</span>
+                  </div>
+                  <div className="flex justify-between text-silver gap-4">
+                    <span className="shrink-0">Véhicule</span>
+                    <span className="text-white text-right font-medium">
+                      {voitureChoisie?.name ?? "—"}
+                    </span>
                   </div>
                   <div className="flex justify-between text-silver">
                     <span>Nombre de tours</span>

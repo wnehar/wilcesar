@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthProvider } from "@/components/auth-provider";
+import { TopNav } from "@/components/top-nav";
 
 export const metadata: Metadata = {
   title: "ZENTURO | L'abonnement automobile ultime",
@@ -22,7 +24,10 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
       </head>
       <body className="min-h-full flex flex-col font-sans bg-obsidian text-white overflow-x-hidden selection:bg-white selection:text-black">
-        {children}
+        <AuthProvider>
+          <TopNav />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

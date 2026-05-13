@@ -5,54 +5,12 @@ import Image from "next/image";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { ChevronRight, ArrowRight, ChevronDown, Loader2, X, Calendar, User, CreditCard, CheckCircle, ArrowLeft, Mail } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
-
-const CARS = [
-  { 
-    id: 1, name: "BMW M4 Competition", category: "Sportive", image: "/cars/bmw_m4.jpg", badges: ["NOUVEAUTÉ", "510 CH"],
-    specs: { engine: "6 en ligne 3.0L Bi-Turbo", power: "510 CH", acceleration: "3.9s", topSpeed: "290 km/h" },
-    description: "La quintessence de la sportivité allemande. Un coupé racé offrant un compromis parfait entre confort au quotidien et performances redoutables."
-  },
-  { 
-    id: 2, name: "Audi RS6 Avant", category: "Sportive", image: "/cars/audi_rs6.avif", badges: ["V8", "QUATTRO"],
-    specs: { engine: "V8 4.0L TFSI Bi-Turbo", power: "600 CH", acceleration: "3.6s", topSpeed: "305 km/h" },
-    description: "Le break familial le plus brutal du marché. Une polyvalence exceptionnelle couplée à des accélérations foudroyantes grâce au système Quattro."
-  },
-  { 
-    id: 3, name: "Mercedes AMG GT", category: "Sportive", image: "/cars/mercedes_amg_gt.jpg", badges: ["V8 BITURBO"],
-    specs: { engine: "V8 4.0L Bi-Turbo", power: "585 CH", acceleration: "3.6s", topSpeed: "318 km/h" },
-    description: "L'esprit de la course automobile encapsulé dans une silhouette d'une élégance rare. Un V8 tonitruant signé Affalterbach."
-  },
-  { 
-    id: 5, name: "Ferrari F8 Tributo", category: "Supercar", image: "/cars/ferrari_f8.jpg", badges: ["V8", "720 CH"],
-    specs: { engine: "V8 3.9L Bi-Turbo", power: "720 CH", acceleration: "2.9s", topSpeed: "340 km/h" },
-    description: "Un hommage roulant au moteur V8 le plus primé de l'histoire de Maranello. Une agilité phénoménale sur piste comme sur route."
-  },
-  { 
-    id: 6, name: "Lamborghini Huracán", category: "Supercar", image: "/cars/lamborghini_huracan.jpg", badges: ["V10"],
-    specs: { engine: "V10 5.2L Atmosphérique", power: "640 CH", acceleration: "2.9s", topSpeed: "325 km/h" },
-    description: "Le hurlement de son V10 atmosphérique est légendaire. Un taureau mécanique sculpté pour l'émotion pure et la précision chirurgicale."
-  },
-  { 
-    id: 7, name: "McLaren 720S", category: "Supercar", image: "/cars/mclaren_720s.jpg", badges: ["AÉRO"],
-    specs: { engine: "V8 4.0L Bi-Turbo", power: "720 CH", acceleration: "2.9s", topSpeed: "341 km/h" },
-    description: "La supercar britannique qui redéfinit les lois de l'aérodynamisme. Légère, incisive et d'une vélocité diabolique."
-  },
-  { 
-    id: 8, name: "Bugatti Chiron", category: "Hypercar", image: "/cars/bugatti_chiron.jpg", badges: ["W16", "1500 CH"],
-    specs: { engine: "W16 8.0L Quadri-Turbo", power: "1500 CH", acceleration: "2.4s", topSpeed: "420 km/h" },
-    description: "L'apogée absolue de l'ingénierie automobile. Une hypercar hors norme alliant luxe royal et vitesse de pointe vertigineuse."
-  },
-  { 
-    id: 9, name: "Pagani Huayra", category: "Hypercar", image: "/cars/pagani_huayra.jpg", badges: ["V12", "ART"],
-    specs: { engine: "V12 6.0L Bi-Turbo (AMG)", power: "730 CH", acceleration: "2.8s", topSpeed: "383 km/h" },
-    description: "Une œuvre d'art sur roues forgée en titane et carbone. Chaque détail de la Huayra a été dessiné par le maître Horacio Pagani."
-  },
-  { 
-    id: 10, name: "Koenigsegg Jesko", category: "Hypercar", image: "/cars/jesko.jpg", badges: ["V8", "PISTE"],
-    specs: { engine: "V8 5.0L Bi-Turbo", power: "1600 CH", acceleration: "2.5s", topSpeed: "480 km/h" },
-    description: "Un monstre taillé pour pulvériser les records. Équipée d'une transmission révolutionnaire LST et d'un appui aérodynamique colossal."
-  }
-];
+import { CARS } from "@/data/cars";
+import { SiteGate } from "@/components/site-gate";
+import {
+  getSessionEmail,
+  recordReservationAfterPayment,
+} from "@/lib/zenturo-storage";
 
 const SUBSCRIPTIONS = [
   { title: "SPORTIVE", desc: "4 véhicules d'exception. Idéal pour s'initier aux sensations fortes sur notre circuit.", price: "499€", priceAmount: 499, cars: 4 },
@@ -93,11 +51,14 @@ export default function Home() {
   const [checkoutStep, setCheckoutStep] = useState<number>(0);
   const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
 
+  const [bookingEmail, setBookingEmail] = useState("");
+
   const selectedCar =
     checkoutItem?.type === "car" ? checkoutItem.data : null;
 
   const closeCarModal = () => {
     setCheckoutItem(null);
+    setBookingEmail("");
     setTimeout(() => setCheckoutStep(0), 300);
   };
 
@@ -113,6 +74,7 @@ export default function Home() {
 
   return (
     <div className="relative w-full" ref={containerRef}>
+      <SiteGate />
       {/* GLOBAL FIXED ANIMATED BACKGROUND IMAGE */}
       <motion.div style={{ opacity: bgOpacity }} className="fixed inset-0 z-[-3] pointer-events-none">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-obsidian/40 to-obsidian/80 z-10"></div>
@@ -519,7 +481,13 @@ export default function Home() {
                         <input type="text" placeholder="PRÉNOM" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/30 focus:outline-none focus:border-white/50" />
                         <input type="text" placeholder="NOM" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/30 focus:outline-none focus:border-white/50" />
                       </div>
-                      <input type="email" placeholder="EMAIL" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/30 focus:outline-none focus:border-white/50" />
+                      <input
+                        type="email"
+                        placeholder="EMAIL"
+                        value={bookingEmail}
+                        onChange={(e) => setBookingEmail(e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/30 focus:outline-none focus:border-white/50"
+                      />
                       <input type="text" placeholder="TÉLÉPHONE" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/30 focus:outline-none focus:border-white/50" />
                       <input type="text" placeholder="ADRESSE COMPLÈTE" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/30 focus:outline-none focus:border-white/50" />
                       <div className="grid grid-cols-2 gap-4">
@@ -572,6 +540,22 @@ export default function Home() {
                           setIsProcessingPayment(true);
                           setTimeout(() => {
                             setIsProcessingPayment(false);
+                            if (selectedCar) {
+                              recordReservationAfterPayment(
+                                getSessionEmail(),
+                                bookingEmail,
+                                {
+                                  type: "vehicule",
+                                  titre: `Location — ${selectedCar.name}`,
+                                  sousTitre: selectedCar.category,
+                                  montantEuros: 1500,
+                                  meta: {
+                                    carId: selectedCar.id,
+                                    car: selectedCar.name,
+                                  },
+                                }
+                              );
+                            }
                             setCheckoutStep(4);
                           }, 2000);
                         }}
