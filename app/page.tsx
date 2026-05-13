@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import Image from "next/image";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { ChevronRight, ArrowRight, ChevronDown, Loader2, X, Calendar, User, CreditCard, CheckCircle, ArrowLeft, Mail } from "lucide-react";
@@ -88,9 +89,12 @@ const AnimatedBackground = () => {
 
 export default function Home() {
   const [openCategory, setOpenCategory] = useState<string | null>("Sportive");
-  const [checkoutItem, setCheckoutItem] = useState<{ type: 'car' | 'sub' | 'stage', data: any } | null>(null);
+  const [checkoutItem, setCheckoutItem] = useState<{ type: 'car' | 'sub', data: any } | null>(null);
   const [checkoutStep, setCheckoutStep] = useState<number>(0);
   const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
+
+  const selectedCar =
+    checkoutItem?.type === "car" ? checkoutItem.data : null;
 
   const closeCarModal = () => {
     setCheckoutItem(null);
@@ -98,10 +102,10 @@ export default function Home() {
   };
 
   useEffect(() => {
-    if (checkoutItem) document.body.style.overflow = "hidden";
+    if (selectedCar) document.body.style.overflow = "hidden";
     else document.body.style.overflow = "unset";
     return () => { document.body.style.overflow = "unset" };
-  }, [checkoutItem]);
+  }, [selectedCar]);
   const containerRef = useRef(null);
   const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start start", "end end"] });
   const bgOpacity = useTransform(scrollYProgress, [0, 0.3], [1, 0.4]);
@@ -275,16 +279,12 @@ export default function Home() {
                 </motion.li>
               ))}
             </ul>
-            <motion.button 
-              onClick={() => handleCheckout("Stage de Pilotage", 399)}
-              disabled={loadingCheckout === "Stage de Pilotage"}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="inline-block group px-10 py-4 border border-white/30 text-white font-bold rounded-full tracking-widest hover:bg-white hover:text-black transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.05)] hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] disabled:opacity-50 flex items-center justify-center"
+            <Link
+              href="/reservation-stage?offre=decouverte"
+              className="inline-block group px-10 py-4 border border-white/30 text-white font-bold rounded-full tracking-widest hover:bg-white hover:text-black transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.05)] hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] flex items-center justify-center hover:scale-[1.02] active:scale-[0.98]"
             >
-              {loadingCheckout === "Stage de Pilotage" && <Loader2 className="w-5 h-5 animate-spin mr-3" />}
               RÉSERVER UN STAGE
-            </motion.button>
+            </Link>
           </motion.div>
         </div>
       </section>
@@ -376,14 +376,12 @@ export default function Home() {
             <span className="text-white font-black tracking-[0.15em]">ZENTURO</span>
             <span className="text-silver/70 ml-3 hidden sm:inline font-light tracking-wide">| Prêt à piloter ?</span>
           </div>
-          <motion.button 
-            onClick={() => setCheckoutItem({ type: 'stage', data: { name: "Pass Premium Zenturo", price: "999€", priceAmount: 999 } })}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="bg-white text-black px-8 py-3.5 rounded-full font-bold tracking-widest text-xs hover:bg-silver transition-all ml-4 flex items-center justify-center gap-2 cursor-pointer"
+          <Link
+            href="/reservation-stage?offre=premium"
+            className="bg-white text-black px-8 py-3.5 rounded-full font-bold tracking-widest text-xs hover:bg-silver transition-all ml-4 flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.03] active:scale-[0.97]"
           >
             RÉSERVER
-          </motion.button>
+          </Link>
         </div>
       </motion.div>
 
